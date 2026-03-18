@@ -1,0 +1,253 @@
+[gd_scene load_steps=10 format=3 uid="uid://main_menu_scene"]
+
+[ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/RuleDialog.gd" id="2_rdlg"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.06, 0.13, 0.07, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_normal"]
+bg_color = Color(0.1, 0.22, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.6, 0.2, 0.7)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_play"]
+bg_color = Color(0.8, 0.6, 0.1, 1)
+border_width_left = 0
+border_width_top = 0
+border_width_right = 0
+border_width_bottom = 3
+border_color = Color(0.5, 0.35, 0.0, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_play_hover"]
+bg_color = Color(1.0, 0.78, 0.15, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_rules"]
+bg_color = Color(0.15, 0.3, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.7, 0.4, 0.5)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+bg_color = Color(0.7, 0.6, 0.2, 0.35)
+
+[node name="MainMenu" type="Control"]
+script = ExtResource("1_menu")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="BG" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="CenterVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -420.0
+offset_top = -260.0
+offset_right = 420.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 32
+
+[node name="TitleLabel" type="Label" parent="CenterVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+theme_override_colors/font_color = Color(0.95, 0.82, 0.3, 1)
+text = "OKEY 101"
+horizontal_alignment = 1
+
+[node name="SubLabel" type="Label" parent="CenterVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.7, 0.9, 0.6, 0.9)
+text = "3 Boyutlu Masa Oyunu"
+horizontal_alignment = 1
+
+[node name="HSep" type="HSeparator" parent="CenterVBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+custom_minimum_size = Vector2(0, 2)
+
+[node name="ModesHBox" type="HBoxContainer" parent="CenterVBox"]
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="CardKatlamasiz" type="PanelContainer" parent="CenterVBox/ModesHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(360, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_normal")
+
+[node name="VBox" type="VBoxContainer" parent="CenterVBox/ModesHBox/CardKatlamasiz"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Margin" type="MarginContainer" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="Inner" type="VBoxContainer" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+text = "Katlamasız 101"
+horizontal_alignment = 1
+
+[node name="Badge" type="Label" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.55, 0.9, 0.55, 1)
+text = "KLASİK MOD"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.8, 0.9, 0.75, 0.9)
+autowrap_mode = 3
+text = "Her oyuncu için el açma baraji sabit 101 puandır. Geleneksel Okey 101 kuralları."
+horizontal_alignment = 1
+
+[node name="BtnPlay" type="Button" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.1, 0.06, 0.0, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_play")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_play_hover")
+text = "▶  Oyna"
+
+[node name="BtnRules" type="Button" parent="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.7, 0.9, 0.6, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_rules")
+text = "📖  Kurallar"
+
+[node name="CardKatlamali" type="PanelContainer" parent="CenterVBox/ModesHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(360, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_normal")
+
+[node name="VBox" type="VBoxContainer" parent="CenterVBox/ModesHBox/CardKatlamali"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Margin" type="MarginContainer" parent="CenterVBox/ModesHBox/CardKatlamali/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="Inner" type="VBoxContainer" parent="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+text = "Katlamalı 101"
+horizontal_alignment = 1
+
+[node name="Badge" type="Label" parent="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1.0, 0.7, 0.3, 1)
+text = "REKABETÇI MOD"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.8, 0.9, 0.75, 0.9)
+autowrap_mode = 3
+text = "Her açan bir öncekini geçmek zorunda! Baraj sürekli artar, strateji şarttır."
+horizontal_alignment = 1
+
+[node name="BtnPlay" type="Button" parent="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.1, 0.06, 0.0, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_play")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_play_hover")
+text = "▶  Oyna"
+
+[node name="BtnRules" type="Button" parent="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.7, 0.9, 0.6, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_rules")
+text = "📖  Kurallar"
+
+[node name="RuleDialog" type="AcceptDialog" parent="."]
+script = ExtResource("2_rdlg")
+min_size = Vector2(700, 500)
+title = "Kurallar"
+
+[node name="MarginContainer" type="MarginContainer" parent="RuleDialog"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="ScrollContainer" type="ScrollContainer" parent="RuleDialog/MarginContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(640, 400)
+
+[node name="RuleText" type="RichTextLabel" parent="RuleDialog/MarginContainer/ScrollContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(620, 0)
+size_flags_horizontal = 3
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 15
+text = ""
+
+[connection signal="pressed" from="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner/BtnPlay"  to="." method="_on_btn_katlamasiz_pressed"]
+[connection signal="pressed" from="CenterVBox/ModesHBox/CardKatlamasiz/VBox/Margin/Inner/BtnRules" to="." method="_on_btn_rules_katlamasiz_pressed"]
+[connection signal="pressed" from="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner/BtnPlay"   to="." method="_on_btn_katlamali_pressed"]
+[connection signal="pressed" from="CenterVBox/ModesHBox/CardKatlamali/VBox/Margin/Inner/BtnRules"  to="." method="_on_btn_rules_katlamali_pressed"]

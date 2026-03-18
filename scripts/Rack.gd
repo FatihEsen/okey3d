@@ -98,12 +98,20 @@ func snap_tile_to_slot(tile: TileObject, slot_index: int) -> void:
 	if slot_index < 0 or slot_index >= slots.size(): return
 	
 	var target_pos = global_position + (global_basis * slots[slot_index])
-	
-	tile.freeze = true # Freeze physics so the tile stays on the rack
+	tile.freeze = true
 	
 	var tween = get_tree().create_tween().set_parallel(true)
 	tween.tween_property(tile, "global_position", target_pos, 0.2)
-	var tilted_basis = global_basis.rotated(global_basis.x, deg_to_rad(15))
+	
+	# Oyuncunun kendi taşları: ıstakaya doğru eğil (yüz görünsün)
+	# Yüzü kapalı taşlar: 180° Y dönüşü ekle ki arka yüz görünsün
+	var tilted_basis: Basis
+	if tile.is_face_down:
+		var flipped = global_basis.rotated(global_basis.y, deg_to_rad(180))
+		tilted_basis = flipped.rotated(flipped.x, deg_to_rad(-15))
+	else:
+		tilted_basis = global_basis.rotated(global_basis.x, deg_to_rad(-15))
+	
 	tween.tween_property(tile, "global_basis", tilted_basis, 0.2)
 
 func arrange_by_series() -> void:
@@ -203,29 +211,56 @@ func _on_tile_drag_ended(tile: TileObject) -> void:
 	if best_slot != -1:
 		move_tile_to_slot(tile, best_slot)
 
-func calculate_current_score() -> Dictionary:
+func calculate_current_score(okey_tile: OkeyTileData = null) -> Dictionary:
 	var total_series_score = 0
-	var valid_pairs_count = 0
+	var sets = get_openable_sets(okey_tile)
+	for s in sets:
+		var data_array: Array[OkeyTileData] = []
+		for t in s: data_array.append(t.data)
+		total_series_score += RuleEngine.get_group_sum(data_array, okey_tile)
+		
+	var valid_pairs_count = get_openable_pairs(okey_tile).size()
 	
-	var current_group: Array[OkeyTileData] = []
-	for item in slot_items:
-		if item != null:
-			current_group.append(item.data)
-		else:
-			if current_group.size() > 0:
-				total_series_score += _evaluate_group(current_group)
-				if current_group.size() == 2 and RuleEngine.is_pair(current_group[0], current_group[1]):
-					valid_pairs_count += 1
-				current_group = []
-				
-	if current_group.size() > 0:
-		total_series_score += _evaluate_group(current_group)
-		if current_group.size() == 2 and RuleEngine.is_pair(current_group[0], current_group[1]):
-			valid_pairs_count += 1
-			
 	return {"series": total_series_score, "pairs": valid_pairs_count}
 
-func _evaluate_group(group: Array[OkeyTileData]) -> int:
-	if RuleEngine.is_valid_group(group):
-		return RuleEngine.get_group_sum(group)
+func get_openable_sets(okey_tile: OkeyTileData = null) -> Array[Array]:
+	var result: Array[Array] = []
+	var current_set: Array[TileObject] = []
+	for item in slot_items:
+		if item != null:
+			current_set.append(item)
+		else:
+			if current_set.size() >= 3:
+				var data_set: Array[OkeyTileData] = []
+				for t in current_set: data_set.append(t.data)
+				if RuleEngine.is_valid_group(data_set, okey_tile):
+					result.append(current_set.duplicate())
+			current_set = []
+	if current_set.size() >= 3:
+		var data_set: Array[OkeyTileData] = []
+		for t in current_set: data_set.append(t.data)
+		if RuleEngine.is_valid_group(data_set, okey_tile):
+			result.append(current_set.duplicate())
+	return result
+
+func get_openable_pairs(okey_tile: OkeyTileData = null) -> Array[Array]:
+	var result: Array[Array] = []
+	var current_set: Array[TileObject] = []
+	for item in slot_items:
+		if item != null:
+			current_set.append(item)
+		else:
+			if current_set.size() == 2:
+				if RuleEngine.is_pair(current_set[0].data, current_set[1].data, okey_tile):
+					result.append(current_set.duplicate())
+			current_set = []
+	if current_set.size() == 2:
+		if RuleEngine.is_pair(current_set[0].data, current_set[1].data, okey_tile):
+			result.append(current_set.duplicate())
+	return result
+
+
+func _evaluate_group(group: Array[OkeyTileData], okey_tile: OkeyTileData = null) -> int:
+	if RuleEngine.is_valid_group(group, okey_tile):
+		return RuleEngine.get_group_sum(group, okey_tile)
 	return 0

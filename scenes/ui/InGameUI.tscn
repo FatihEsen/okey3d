@@ -9,69 +9,133 @@ script = ExtResource("1_inui")
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -150.0
+offset_left = -250.0
 offset_top = 20.0
-offset_right = 150.0
-offset_bottom = 70.0
+offset_right = 250.0
+offset_bottom = 60.0
 grow_horizontal = 2
 
 [node name="Margin" type="MarginContainer" parent="ScorePanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="ScoreLabel" type="Label" parent="ScorePanel/Margin"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Seri Puanı: 0   |   Çift: 0/5"
+theme_override_font_sizes/font_size = 18
+text = "Seri: 0 / 101   |   Çift: 0 / 5"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="TurnPanel" type="PanelContainer" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -130.0
+offset_top = 68.0
+offset_right = 130.0
+offset_bottom = 108.0
+grow_horizontal = 2
+
+[node name="Margin" type="MarginContainer" parent="TurnPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 8
+
+[node name="TurnLabel" type="Label" parent="TurnPanel/Margin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Sıra: —"
+horizontal_alignment = 1
+
+[node name="MessagePanel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -20.0
+offset_right = 200.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="MessagePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="MessageLabel" type="Label" parent="MessagePanel/Margin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Hoş Geldiniz!"
+horizontal_alignment = 1
+
+[node name="BottomBar" type="MarginContainer" parent="."]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -215.0
-offset_top = -60.0
+offset_left = -600.0
+offset_top = -65.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="BottomBar"]
 layout_mode = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 10
 
-[node name="BtnSeriDiz" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="BtnDraw" type="Button" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
+text = "Taş Çek"
+disabled = true
+
+[node name="BtnDiscard" type="Button" parent="BottomBar/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+text = "Taş At"
+disabled = true
+
+[node name="VSep1" type="VSeparator" parent="BottomBar/HBoxContainer"]
+layout_mode = 2
+
+[node name="BtnSeriDiz" type="Button" parent="BottomBar/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
 text = "Seri Diz"
 
-[node name="BtnCiftDiz" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="BtnCiftDiz" type="Button" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 text = "Çift Diz"
 
-[node name="VSeparator" type="VSeparator" parent="MarginContainer/HBoxContainer"]
+[node name="VSep2" type="VSeparator" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
 
-[node name="BtnSeriAc" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="BtnSeriAc" type="Button" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 text = "Seri Aç"
 
-[node name="BtnCiftAc" type="Button" parent="MarginContainer/HBoxContainer"]
+[node name="BtnCiftAc" type="Button" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 text = "Çift Aç"
 
-[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnSeriDiz" to="." method="_on_btn_seri_diz_pressed"]
-[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnCiftDiz" to="." method="_on_btn_cift_diz_pressed"]
-[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnSeriAc" to="." method="_on_btn_seri_ac_pressed"]
-[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnCiftAc" to="." method="_on_btn_cift_ac_pressed"]
+[connection signal="pressed" from="BottomBar/HBoxContainer/BtnDraw"     to="." method="_on_btn_draw_pressed"]
+[connection signal="pressed" from="BottomBar/HBoxContainer/BtnDiscard"  to="." method="_on_btn_discard_pressed"]
+[connection signal="pressed" from="BottomBar/HBoxContainer/BtnSeriDiz"  to="." method="_on_btn_seri_diz_pressed"]
+[connection signal="pressed" from="BottomBar/HBoxContainer/BtnCiftDiz"  to="." method="_on_btn_cift_diz_pressed"]
+[connection signal="pressed" from="BottomBar/HBoxContainer/BtnSeriAc"   to="." method="_on_btn_seri_ac_pressed"]
+[connection signal="pressed" from="BottomBar/HBoxContainer/BtnCiftAc"   to="." method="_on_btn_cift_ac_pressed"]
