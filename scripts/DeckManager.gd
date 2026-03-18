@@ -1,6 +1,8 @@
 extends Node
 class_name DeckManager
 
+const TileDataScript = preload("res://scripts/OkeyTileData.gd")
+
 # Total tiles: 106.
 # 2 sets of [1-13 in 4 colors] = 104 tiles
 # 2 False Jokers = 2 tiles
@@ -21,7 +23,7 @@ func create_deck() -> void:
 	for i in range(2):
 		for c in [Constants.TileColor.YELLOW, Constants.TileColor.BLUE, Constants.TileColor.BLACK, Constants.TileColor.RED]:
 			for v in range(1, 14): # 1 to 13
-				var td = preload("res://scripts/OkeyTileData.gd").new()
+				var td = TileDataScript.new()
 				td.value = v
 				td.color = c
 				td.is_joker = false
@@ -30,7 +32,7 @@ func create_deck() -> void:
 				id_counter += 1
 				
 		# Add 2 False Jokers (Sahte Okey)
-		var sahte = preload("res://scripts/OkeyTileData.gd").new()
+		var sahte = TileDataScript.new()
 		sahte.value = 0
 		sahte.color = Constants.TileColor.JOKER
 		sahte.is_joker = true

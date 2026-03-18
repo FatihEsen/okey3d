@@ -1,8 +1,8 @@
 extends StaticBody3D
 class_name RackObject
 
-@export var max_tiles: int = 22 # Initial max hand size the rack should fit
-@export var spacing: float = 1.02 # Distance between tile slots
+@export var max_tiles: int = 22
+@export var spacing: float = 1.02
 
 var held_tiles: Array[TileObject] = []
 var slots: Array[Vector3] = []
@@ -11,20 +11,14 @@ var slot_items: Array[TileObject] = []
 signal logic_updated()
 
 func _ready() -> void:
-	# Generate simple slots across x-axis
-	var total_width = (max_tiles - 1) * spacing
-	var start_x = -total_width / 2.0
-	
-	# Overwrite with two row logic
 	slots.clear()
 	var row_capacity = 16
-	var row_spacing = 1.1 # Width of tile + some margin
-	var col_spacing = 1.2 # Depth/height difference
+	var row_spacing = 1.1 
+	var col_spacing = 1.2 
 	
 	for row in range(2):
-		total_width = (row_capacity - 1) * row_spacing
-		start_x = -total_width / 2.0
-		# Calculate offset
+		var total_width = (row_capacity - 1) * row_spacing
+		var start_x = -total_width / 2.0
 		var z_offset = (0.5 - row) * col_spacing
 		var y_offset = 1.0 + (row * 0.5) 
 		
@@ -42,14 +36,13 @@ func clear_tiles() -> void:
 
 func add_tile(tile: TileObject) -> bool:
 	if held_tiles.size() >= slots.size():
-		return false # Rack is full
+		return false
 	
 	held_tiles.append(tile)
 	if not tile.is_connected("drag_started", _on_tile_drag_started):
 		tile.connect("drag_started", _on_tile_drag_started)
 		tile.connect("drag_ended", _on_tile_drag_ended)
 
-	# Snap to next available slot
 	var slot_index = find_empty_slot()
 	if slot_index != -1:
 		slot_items[slot_index] = tile
@@ -58,53 +51,22 @@ func add_tile(tile: TileObject) -> bool:
 	return true
 
 func remove_tile(tile: TileObject) -> void:
-	if tile in held_tiles:
-		held_tiles.erase(tile)
-		tile.freeze = false # Let physics take over again when removed
-		var idx = slot_items.find(tile)
-		if idx != -1:
-			slot_items[idx] = null
-		emit_signal("logic_updated")
-		
+	held_tiles.erase(tile)
+	var idx = slot_items.find(tile)
+	if idx != -1:
+		slot_items[idx] = null
+	emit_signal("logic_updated")
+
 func find_empty_slot() -> int:
 	return slot_items.find(null)
 
-func move_tile_to_slot(tile: TileObject, target_slot: int) -> void:
-	if target_slot < 0 or target_slot >= slots.size(): return
-	
-	var current_slot = slot_items.find(tile)
-	if current_slot == target_slot: return
-	
-	if current_slot != -1:
-		slot_items[current_slot] = null
-		
-	# If the target slot is currently occupied, swap the tiles
-	if slot_items[target_slot] != null:
-		var occupying_tile = slot_items[target_slot]
-		if current_slot != -1:
-			slot_items[current_slot] = occupying_tile
-			snap_tile_to_slot(occupying_tile, current_slot)
-		else:
-			var empty_idx = find_empty_slot()
-			if empty_idx != -1:
-				slot_items[empty_idx] = occupying_tile
-				snap_tile_to_slot(occupying_tile, empty_idx)
-				
-	slot_items[target_slot] = tile
-	snap_tile_to_slot(tile, target_slot)
-	emit_signal("logic_updated")
-
 func snap_tile_to_slot(tile: TileObject, slot_index: int) -> void:
 	if slot_index < 0 or slot_index >= slots.size(): return
-	
 	var target_pos = global_position + (global_basis * slots[slot_index])
 	tile.freeze = true
-	
 	var tween = get_tree().create_tween().set_parallel(true)
 	tween.tween_property(tile, "global_position", target_pos, 0.2)
 	
-	# Oyuncunun kendi taşları: ıstakaya doğru eğil (yüz görünsün)
-	# Yüzü kapalı taşlar: 180° Y dönüşü ekle ki arka yüz görünsün
 	var tilted_basis: Basis
 	if tile.is_face_down:
 		var flipped = global_basis.rotated(global_basis.y, deg_to_rad(180))
@@ -114,96 +76,190 @@ func snap_tile_to_slot(tile: TileObject, slot_index: int) -> void:
 	
 	tween.tween_property(tile, "global_basis", tilted_basis, 0.2)
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  AKILLI DİZME (SERİ)
+# ─────────────────────────────────────────────────────────────────────────────
+
 func arrange_by_series() -> void:
 	if held_tiles.is_empty(): return
-	var tiles = held_tiles.duplicate()
 	
-	# Sort by Color then Value
-	tiles.sort_custom(func(a, b):
+	# Tablodan okey_tile bilgisini al (RuleEngine için)
+	var table = get_tree().get_root().find_child("Table", true, false)
+	var okey_tile = table.okey_tile_data if table else null
+	
+	var tiles = held_tiles.duplicate()
+	var final_arrangement: Array[Array] = [] # Array[Array[TileObject]]
+	
+	# 1. Tüm olası perleri (run ve group) bul
+	var possible_sets = _find_all_valid_sets(tiles, okey_tile)
+	
+	# 2. En iyi kombinasyonu seç (Greedy: En uzun/yüksek puanlı olanı seç ve taşları kullanılmış say)
+	var remaining_tiles = tiles.duplicate()
+	possible_sets.sort_custom(func(a, b):
+		return a.size() > b.size() # Önce uzun takımları al
+	)
+	
+	for s in possible_sets:
+		# Bu set içindeki tüm taşlar hala "kullanılmamış" mı?
+		var all_available = true
+		for t in s:
+			if t not in remaining_tiles:
+				all_available = false
+				break
+		
+		if all_available:
+			final_arrangement.append(s)
+			for t in s:
+				remaining_tiles.erase(t)
+	
+	# 3. Kalan taşları renk ve sayıya göre sırala
+	remaining_tiles.sort_custom(func(a, b):
 		if a.data.color < b.data.color: return true
 		if a.data.color > b.data.color: return false
 		return a.data.value < b.data.value
 	)
 	
-	var new_slots = []
-	new_slots.resize(slot_items.size())
-	new_slots.fill(null)
+	# 4. Istakaya yerleştir (Perler arasında boşluk bırakarak)
+	_reassign_with_groups(final_arrangement, remaining_tiles)
+
+func _find_all_valid_sets(tiles: Array, okey_t: OkeyTileData) -> Array[Array]:
+	var sets: Array[Array] = []
 	
-	var current_idx = 0
-	for i in range(tiles.size()):
-		if current_idx >= new_slots.size():
-			current_idx = new_slots.find(null)
+	# Grupları bul (aynı sayı farklı renk)
+	var val_map = {}
+	for t in tiles:
+		var v = t.data.value
+		if not val_map.has(v): val_map[v] = []
+		val_map[v].append(t)
+	
+	for v in val_map:
+		var group_tiles = val_map[v]
+		if group_tiles.size() >= 3:
+			# Renk tekrarı olmayan tüm 3'lü ve 4'lü kombinasyonlar...
+			# Basitleştirme: 3 veya 4 farklı renk varsa ekle
+			var colors = {}
+			var unique_color_group = []
+			for t in group_tiles:
+				if not colors.has(t.data.color):
+					colors[t.data.color] = true
+					unique_color_group.append(t)
+			if unique_color_group.size() >= 3:
+				sets.append(unique_color_group)
+
+	# Serileri bul (ardışık aynı renk)
+	var color_map = {}
+	for t in tiles:
+		var c = t.data.color
+		if not color_map.has(c): color_map[c] = []
+		color_map[c].append(t)
+		
+	for c in color_map:
+		var c_tiles = color_map[c]
+		c_tiles.sort_custom(func(a, b): return a.data.value < b.data.value)
+		
+		var current_run = []
+		for i in range(c_tiles.size()):
+			if current_run.is_empty():
+				current_run.append(c_tiles[i])
+			else:
+				if c_tiles[i].data.value == current_run.back().data.value + 1:
+					current_run.append(c_tiles[i])
+				elif c_tiles[i].data.value == current_run.back().data.value:
+					continue # Aynı taştan iki tane varsa seriyi bozma ama ekleme de
+				else:
+					if current_run.size() >= 3:
+						sets.append(current_run.duplicate())
+					current_run = [c_tiles[i]]
+		if current_run.size() >= 3:
+			sets.append(current_run.duplicate())
 			
-		if i > 0 and current_idx != -1:
-			var prev = tiles[i-1]
-			var curr = tiles[i]
-			# Add a gap if color changed, or value gap exists, and we are not at end of row
-			if curr.data.color != prev.data.color or curr.data.value > prev.data.value + 1:
-				current_idx += 1
-				
-		if current_idx >= new_slots.size() or current_idx == -1:
-			current_idx = new_slots.find(null)
-			
-		if current_idx != -1:
-			new_slots[current_idx] = tiles[i]
-			current_idx += 1
-			
-	_reassign_slots_array(new_slots)
+	return sets
+
+func _reassign_with_groups(groups: Array, leftovers: Array) -> void:
+	var new_slot_items = []
+	new_slot_items.resize(slots.size())
+	new_slot_items.fill(null)
+	
+	var cursor = 0
+	# Önce grupları diz
+	for group in groups:
+		if cursor + group.size() > slots.size(): break
+		for t in group:
+			new_slot_items[cursor] = t
+			cursor += 1
+		cursor += 1 # Boşluk bırak
+	
+	# Sonra artıkları diz
+	for t in leftovers:
+		if cursor >= slots.size():
+			cursor = new_slot_items.find(null)
+		if cursor == -1: break
+		new_slot_items[cursor] = t
+		cursor += 1
+
+	slot_items = new_slot_items
+	for i in range(slot_items.size()):
+		if slot_items[i]:
+			snap_tile_to_slot(slot_items[i], i)
+	emit_signal("logic_updated")
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  ÇİFT DİZME
+# ─────────────────────────────────────────────────────────────────────────────
 
 func arrange_by_pairs() -> void:
 	if held_tiles.is_empty(): return
 	var tiles = held_tiles.duplicate()
 	
-	# Sort by Value, then Color
 	tiles.sort_custom(func(a, b):
 		if a.data.value < b.data.value: return true
 		if a.data.value > b.data.value: return false
 		return a.data.color < b.data.color
 	)
 	
-	var paired_tiles: Array[TileObject] = []
-	var unpaired_tiles: Array[TileObject] = []
-	
+	var pairs = []
+	var remaining = []
 	var i = 0
 	while i < tiles.size():
-		if i + 1 < tiles.size() and tiles[i].data.matches(tiles[i+1].data):
-			paired_tiles.append(tiles[i])
-			paired_tiles.append(tiles[i+1])
+		if i + 1 < tiles.size() and RuleEngine.is_pair(tiles[i].data, tiles[i+1].data):
+			pairs.append([tiles[i], tiles[i+1]])
 			i += 2
 		else:
-			unpaired_tiles.append(tiles[i])
+			remaining.append(tiles[i])
 			i += 1
 			
-	var result_tiles = paired_tiles
-	result_tiles.append_array(unpaired_tiles)
-	
-	# Place them tightly, no special gaps
-	var new_slots = []
-	new_slots.resize(slot_items.size())
-	new_slots.fill(null)
-	for j in range(result_tiles.size()):
-		new_slots[j] = result_tiles[j]
-		
-	_reassign_slots_array(new_slots)
+	_reassign_with_groups(pairs, remaining)
 
-func _reassign_slots_array(new_slots: Array) -> void:
-	for i in range(slot_items.size()):
-		slot_items[i] = new_slots[i]
-		if slot_items[i] != null:
-			snap_tile_to_slot(slot_items[i], i)
+# ─────────────────────────────────────────────────────────────────────────────
+#  SLOT VE PUAN MANTIĞI
+# ─────────────────────────────────────────────────────────────────────────────
+
+func move_tile_to_slot(tile: TileObject, slot_index: int) -> void:
+	var old_idx = slot_items.find(tile)
+	if old_idx != -1:
+		slot_items[old_idx] = null
+	
+	if slot_items[slot_index] != null:
+		var occupying_tile = slot_items[slot_index]
+		var empty_idx = find_empty_slot()
+		if empty_idx != -1:
+			slot_items[empty_idx] = occupying_tile
+			snap_tile_to_slot(occupying_tile, empty_idx)
+				
+	slot_items[slot_index] = tile
+	snap_tile_to_slot(tile, slot_index)
 	emit_signal("logic_updated")
 
 func _on_tile_drag_started(tile: TileObject) -> void:
-	# Unassign from physical slot without losing reference
+	# Drag başladığında slotta yerini boşaltma (opsiyonel, genelde bitince yapılır)
 	pass
 
 func _on_tile_drag_ended(tile: TileObject) -> void:
-	# Find closest slot
-	var best_dist = INF
+	var best_dist = 9999.0
 	var best_slot = -1
 	for i in range(slots.size()):
 		var slot_world_pos = global_position + (global_basis * slots[i])
-		var d = slot_world_pos.distance_to(tile.global_position)
+		var d = tile.global_position.distance_to(slot_world_pos)
 		if d < best_dist:
 			best_dist = d
 			best_slot = i
@@ -220,7 +276,6 @@ func calculate_current_score(okey_tile: OkeyTileData = null) -> Dictionary:
 		total_series_score += RuleEngine.get_group_sum(data_array, okey_tile)
 		
 	var valid_pairs_count = get_openable_pairs(okey_tile).size()
-	
 	return {"series": total_series_score, "pairs": valid_pairs_count}
 
 func get_openable_sets(okey_tile: OkeyTileData = null) -> Array[Array]:
@@ -258,9 +313,3 @@ func get_openable_pairs(okey_tile: OkeyTileData = null) -> Array[Array]:
 		if RuleEngine.is_pair(current_set[0].data, current_set[1].data, okey_tile):
 			result.append(current_set.duplicate())
 	return result
-
-
-func _evaluate_group(group: Array[OkeyTileData], okey_tile: OkeyTileData = null) -> int:
-	if RuleEngine.is_valid_group(group, okey_tile):
-		return RuleEngine.get_group_sum(group, okey_tile)
-	return 0

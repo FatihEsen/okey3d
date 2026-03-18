@@ -25,16 +25,25 @@ signal tile_selected(tile: TileObject)
 signal game_message(msg: String, error: bool) # Bilgi/Hata mesajları için
 
 # Masa durumu (açılmış taşlar)
-var player_opened_sets: Array[Array] = [[], [], [], []] # Her oyuncunun açtığı seriler (Array[Array[TileObject]])
-var player_opened_pairs: Array[Array] = [[], [], [], []] # Her oyuncunun açtığı çiftler
+var player_opened_sets: Array[Array] = [] 
+var player_opened_pairs: Array[Array] = []
 
 @onready var deck_manager = preload("res://scripts/DeckManager.gd").new()
 
-# Atılan taşların yeri
-var discard_pos_world      := Vector3(-5, 1.5, 0)
-var top_discard_visual: TileObject = null
+# Discard positions (now per player, to the right of their rack)
+var player_discard_tiles: Array[Array] = [] 
+var top_discard_visual: TileObject = null 
 
 func _ready() -> void:
+	# Dizileri garantiye alalım
+	player_opened_sets.clear()
+	player_opened_pairs.clear()
+	player_discard_tiles.clear()
+	for i in range(4):
+		player_opened_sets.append([])
+		player_opened_pairs.append([])
+		player_discard_tiles.append([])
+		
 	add_child(deck_manager)
 	setup_racks()
 	start_new_round()
@@ -54,10 +63,17 @@ func setup_racks() -> void:
 			racks.append(rack)
 
 func start_new_round() -> void:
-	for t in active_tiles:    t.queue_free()
-	for t in deck_pile_tiles: t.queue_free()
+	# Mevcut tüm taş node'larını sahneden temizle
+	for tile in active_tiles:
+		if is_instance_valid(tile):
+			tile.queue_free()
 	active_tiles.clear()
 	deck_pile_tiles.clear()
+	
+	for p_pile in player_discard_tiles:
+		for t in p_pile: t.queue_free()
+		p_pile.clear()
+		
 	top_discard_visual = null
 	selected_tile      = null
 
@@ -141,21 +157,26 @@ func spawn_deck_pile() -> void:
 			deck_pile_tiles.append(pile)
 
 func _refresh_top_discard() -> void:
-	if top_discard_visual:
-		top_discard_visual.queue_free()
-		active_tiles.erase(top_discard_visual)
+	# Artık her oyuncunun son attığı taşı masada bırakıyoruz.
+	# "Çekilebilecek" son taş, bizden önce (soldaki) oyuncunun attığı taştır.
+	# 101'de sadece bir önceki oyuncunun son taşı alınabilir.
+	var shooter = (current_player - 1 + 4) % 4
+	var p_pile = player_discard_tiles[shooter]
+	
+	if p_pile.size() > 0:
+		top_discard_visual = p_pile.back()
+		top_discard_visual.set_meta("is_discard_top", true)
+		if not top_discard_visual.is_connected("tile_clicked", _on_discard_top_clicked):
+			top_discard_visual.connect("tile_clicked", _on_discard_top_clicked)
+	else:
 		top_discard_visual = null
 
-	var top = deck_manager.get_top_discard()
-	if not top: return
-
-	top_discard_visual = _create_tile(top, discard_pos_world, false)
-	top_discard_visual.freeze = true
-	top_discard_visual.global_rotation_degrees = Vector3(-90, 0, 0)
-	# Atılan yığına tıklayınca o taşı çekebilirsin
-	top_discard_visual.set_meta("is_discard_top", true)
-	if not top_discard_visual.is_connected("tile_clicked", _on_discard_top_clicked):
-		top_discard_visual.connect("tile_clicked", _on_discard_top_clicked)
+func get_discard_pos(player_id: int) -> Vector3:
+	var rack = racks[player_id]
+	# Istakanın sağına (rack basis X yönü) + yükseklik
+	var pos = rack.global_position + (rack.global_basis.x * 12.0) - (rack.global_basis.z * 4.0)
+	pos.y = 1.2
+	return pos
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  JOKER (OKEY) KURALI
@@ -210,10 +231,14 @@ func _on_discard_top_clicked(_tile: TileObject) -> void:
 		print("Bu turda zaten taş çektin!")
 		return
 
-	var data = deck_manager.discarded_tiles.pop_back()
-	if not data: return
+	var shooter = (current_player - 1 + 4) % 4
+	var shooter_pile = player_discard_tiles[shooter]
+	if shooter_pile.is_empty(): return
+	
+	var data = shooter_pile.back().data
+	shooter_pile.pop_back().queue_free() # Görseli sil, yeni ıstakada başka bir tane yaratacağız
 
-	var new_tile = _create_tile(data, discard_pos_world + Vector3(0, 1, 0), false)
+	var new_tile = _create_tile(data, get_discard_pos(shooter), false)
 	_connect_local_tile(new_tile)
 	racks[local_player_id].add_tile(new_tile)
 	has_drawn_this_turn = true
@@ -246,10 +271,12 @@ func _do_discard(tile: TileObject) -> void:
 	deck_manager.discard_tile(tile.data)
 
 	tile.freeze = true
-	var stack_offset = Vector3(0, 0.05 * (deck_manager.discarded_tiles.size() - 1), 0)
-	tile.global_position = discard_pos_world + stack_offset
-	tile.global_rotation_degrees = Vector3(-90, 0, 0)
+	var d_pos = get_discard_pos(local_player_id)
+	var stack_offset = Vector3(0, 0.05 * player_discard_tiles[local_player_id].size(), 0)
+	tile.global_position = d_pos + stack_offset
+	tile.global_rotation_degrees = Vector3(-90, racks[local_player_id].global_rotation_degrees.y, 0)
 
+	player_discard_tiles[local_player_id].append(tile)
 	emit_signal("tile_discarded", tile.data)
 	_refresh_top_discard()
 
@@ -280,16 +307,27 @@ func _run_ai_turn() -> void:
 	if current_player == local_player_id: return
 
 	var data = deck_manager.draw_tile()
-	if not data:
-		print("Deste bitti (AI)")
-		return
+	if not data: return
 
 	if deck_pile_tiles.size() > 0:
 		var removed = deck_pile_tiles.pop_back()
-		removed.queue_free()
-		active_tiles.erase(removed)
+		if removed:
+			removed.queue_free()
+			active_tiles.erase(removed)
 
-	# AI basit strateji: çektiği taşı hemen atar
+	# AI görsel olarak çektiği taşı atar
+	var t = _create_tile(data, get_node("CenterDeckPos").global_position, false)
+	t.freeze = true
+	t.global_rotation_degrees = Vector3(-90, 0, 0)
+	
+	await get_tree().create_timer(0.4).timeout
+	
+	var d_pos = get_discard_pos(current_player)
+	var stack_offset = Vector3(0, 0.05 * player_discard_tiles[current_player].size(), 0)
+	t.global_position = d_pos + stack_offset
+	t.global_rotation_degrees = Vector3(-90, racks[current_player].global_rotation_degrees.y, 0)
+	
+	player_discard_tiles[current_player].append(t)
 	deck_manager.discard_tile(data)
 	_refresh_top_discard()
 

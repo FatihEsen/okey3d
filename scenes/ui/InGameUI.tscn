@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/InGameUI.gd" id="1_inui"]
 
 [node name="InGameUI" type="CanvasLayer"]
+layer = 5
 script = ExtResource("1_inui")
 
 [node name="ScorePanel" type="PanelContainer" parent="."]
@@ -14,9 +15,11 @@ offset_top = 20.0
 offset_right = 250.0
 offset_bottom = 60.0
 grow_horizontal = 2
+mouse_filter = 2
 
 [node name="Margin" type="MarginContainer" parent="ScorePanel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 15
@@ -37,9 +40,11 @@ offset_top = 68.0
 offset_right = 130.0
 offset_bottom = 108.0
 grow_horizontal = 2
+mouse_filter = 2
 
 [node name="Margin" type="MarginContainer" parent="TurnPanel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 15
@@ -67,6 +72,7 @@ mouse_filter = 2
 
 [node name="Margin" type="MarginContainer" parent="MessagePanel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 20
@@ -78,64 +84,75 @@ theme_override_font_sizes/font_size = 20
 text = "Hoş Geldiniz!"
 horizontal_alignment = 1
 
-[node name="BottomBar" type="MarginContainer" parent="."]
-anchors_preset = 3
-anchor_left = 1.0
+[node name="BottomBar" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -600.0
-offset_top = -65.0
-grow_horizontal = 0
+offset_top = -100.0
+grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+mouse_filter = 1
+
+[node name="ColorRect" type="ColorRect" parent="BottomBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.4)
+mouse_filter = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="BottomBar"]
-layout_mode = 2
-theme_override_constants/separation = 10
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -25.0
+offset_right = 400.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
 
 [node name="BtnDraw" type="Button" parent="BottomBar/HBoxContainer"]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 text = "Taş Çek"
-disabled = true
 
 [node name="BtnDiscard" type="Button" parent="BottomBar/HBoxContainer"]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 text = "Taş At"
-disabled = true
 
 [node name="VSep1" type="VSeparator" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
 
 [node name="BtnSeriDiz" type="Button" parent="BottomBar/HBoxContainer"]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 text = "Seri Diz"
 
 [node name="BtnCiftDiz" type="Button" parent="BottomBar/HBoxContainer"]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 text = "Çift Diz"
 
 [node name="VSep2" type="VSeparator" parent="BottomBar/HBoxContainer"]
 layout_mode = 2
 
 [node name="BtnSeriAc" type="Button" parent="BottomBar/HBoxContainer"]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 text = "Seri Aç"
 
 [node name="BtnCiftAc" type="Button" parent="BottomBar/HBoxContainer"]
+custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 text = "Çift Aç"
-
-[connection signal="pressed" from="BottomBar/HBoxContainer/BtnDraw"     to="." method="_on_btn_draw_pressed"]
-[connection signal="pressed" from="BottomBar/HBoxContainer/BtnDiscard"  to="." method="_on_btn_discard_pressed"]
-[connection signal="pressed" from="BottomBar/HBoxContainer/BtnSeriDiz"  to="." method="_on_btn_seri_diz_pressed"]
-[connection signal="pressed" from="BottomBar/HBoxContainer/BtnCiftDiz"  to="." method="_on_btn_cift_diz_pressed"]
-[connection signal="pressed" from="BottomBar/HBoxContainer/BtnSeriAc"   to="." method="_on_btn_seri_ac_pressed"]
-[connection signal="pressed" from="BottomBar/HBoxContainer/BtnCiftAc"   to="." method="_on_btn_cift_ac_pressed"]
