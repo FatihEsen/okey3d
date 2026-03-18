@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://dfy46r2u34nas"]
+
+[ext_resource type="Script" uid="uid://c0nwbncujy46x" path="res://scripts/Rack.gd" id="1_r4c5k"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_front_step"]
+size = Vector3(18.5, 0.5, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rack_wood"]
+albedo_color = Color(0.36, 0.22, 0.1, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_front_collider"]
+size = Vector3(18.5, 0.5, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_back_step"]
+size = Vector3(18.5, 1, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_back_collider"]
+size = Vector3(18.5, 1, 1.2)
+
+[node name="Rack" type="StaticBody3D" unique_id=1840151093]
+script = ExtResource("1_r4c5k")
+
+[node name="FrontStepMesh" type="MeshInstance3D" parent="." unique_id=1017273059]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
+mesh = SubResource("BoxMesh_front_step")
+surface_material_override/0 = SubResource("StandardMaterial3D_rack_wood")
+
+[node name="FrontStepCollision" type="CollisionShape3D" parent="." unique_id=1295423464]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
+shape = SubResource("BoxShape3D_front_collider")
+
+[node name="BackStepMesh" type="MeshInstance3D" parent="." unique_id=1846138474]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0034265518, 0.23128891, -0.6002158)
+mesh = SubResource("BoxMesh_back_step")
+surface_material_override/0 = SubResource("StandardMaterial3D_rack_wood")
+
+[node name="BackStepCollision" type="CollisionShape3D" parent="." unique_id=2088819650]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, -0.6)
+shape = SubResource("BoxShape3D_back_collider")
+
+[node name="TileSlots" type="Node3D" parent="." unique_id=627650540]

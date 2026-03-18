@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://dfy45q1t23l8r"]
+
+[ext_resource type="Script" uid="uid://cgyvxe3q0ace3" path="res://scripts/Tile.gd" id="1_a2b3c"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_okey_tile"]
+size = Vector3(1, 1.5, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tile_base"]
+albedo_color = Color(0.960784, 0.941176, 0.862745, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tile_collider"]
+size = Vector3(1, 1.5, 0.2)
+
+[node name="Tile" type="RigidBody3D" unique_id=974139726 groups=["tiles"]]
+script = ExtResource("1_a2b3c")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2001037731]
+mesh = SubResource("BoxMesh_okey_tile")
+surface_material_override/0 = SubResource("StandardMaterial3D_tile_base")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2131899023]
+shape = SubResource("BoxShape3D_tile_collider")
+
+[node name="NumberLabel" type="Label3D" parent="." unique_id=1949039927]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35471937, 0.11)
+text = "13"
+font_size = 96
+
+[node name="HoverHighlight" type="MeshInstance3D" parent="." unique_id=545035824]
+visible = false
+mesh = SubResource("BoxMesh_okey_tile")
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

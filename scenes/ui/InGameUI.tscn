@@ -1,0 +1,77 @@
+[gd_scene load_steps=2 format=3 uid="uid://ci5k38f9b9x2b"]
+
+[ext_resource type="Script" path="res://scripts/InGameUI.gd" id="1_inui"]
+
+[node name="InGameUI" type="CanvasLayer"]
+script = ExtResource("1_inui")
+
+[node name="ScorePanel" type="PanelContainer" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 70.0
+grow_horizontal = 2
+
+[node name="Margin" type="MarginContainer" parent="ScorePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 10
+
+[node name="ScoreLabel" type="Label" parent="ScorePanel/Margin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Seri Puanı: 0   |   Çift: 0/5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -215.0
+offset_top = -60.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="BtnSeriDiz" type="Button" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Seri Diz"
+
+[node name="BtnCiftDiz" type="Button" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Çift Diz"
+
+[node name="VSeparator" type="VSeparator" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="BtnSeriAc" type="Button" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Seri Aç"
+
+[node name="BtnCiftAc" type="Button" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Çift Aç"
+
+[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnSeriDiz" to="." method="_on_btn_seri_diz_pressed"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnCiftDiz" to="." method="_on_btn_cift_diz_pressed"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnSeriAc" to="." method="_on_btn_seri_ac_pressed"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/BtnCiftAc" to="." method="_on_btn_cift_ac_pressed"]
