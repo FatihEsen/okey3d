@@ -45,9 +45,23 @@ func update_visuals() -> void:
 		label.modulate = data.get_display_color()
 
 func set_selected(v: bool) -> void:
+	if is_selected == v: return
 	is_selected = v
+	
 	if hover_mesh and not is_face_down:
 		hover_mesh.visible = v
+
+	var mesh = get_node_or_null("MeshInstance3D")
+	var tw = create_tween().set_parallel(true)
+	var target_mesh_y = 0.3 if is_selected else 0.0
+	var target_label_y = 0.6547 if is_selected else 0.3547
+	
+	if mesh:
+		tw.tween_property(mesh, "position:y", target_mesh_y, 0.1)
+	if hover_mesh:
+		tw.tween_property(hover_mesh, "position:y", target_mesh_y, 0.1)
+	if label:
+		tw.tween_property(label, "position:y", target_label_y, 0.1)
 
 # ─── Input ────────────────────────────────────────────────────────────────────
 func _on_input_event(_camera: Node, event: InputEvent, _pos: Vector3, _norm: Vector3, _shape: int) -> void:

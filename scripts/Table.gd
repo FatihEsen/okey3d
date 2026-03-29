@@ -23,6 +23,7 @@ signal turn_changed(player_id: int)
 signal tile_discarded(data: OkeyTileData)
 signal tile_selected(tile: TileObject)
 signal game_message(msg: String, error: bool) # Bilgi/Hata mesajları için
+signal game_over(scores: Dictionary)
 
 # Masa durumu (açılmış taşlar)
 var player_opened_sets: Array[Array] = [] 
@@ -106,7 +107,7 @@ func start_new_round() -> void:
 	spawn_deck_pile()
 
 	current_player      = 0
-	has_drawn_this_turn = false
+	has_drawn_this_turn = true # 22 taşla başladığı için yerden taş çekmez, kural gereği direkt elden taş atar.
 	game_started        = true
 	emit_signal("turn_changed", current_player)
 
@@ -128,11 +129,12 @@ func spawn_okey_indicator() -> void:
 	if not deck_manager.okey_indicator: return
 	var ind = _create_tile(
 		deck_manager.okey_indicator,
-		$CenterDeckPos.global_position + Vector3(5, 0.6, -2),
+		$CenterDeckPos.global_position + Vector3(4, 1.0, -1),
 		false    # yüzü yukarı
 	)
 	ind.freeze = true
-	ind.global_rotation_degrees = Vector3(-90, 0, 0)
+	# Taşı oyuncuya doğru (kamera açısına göre) hafif yatıralım ki net okunsun
+	ind.global_rotation_degrees = Vector3(-45, 0, 0)
 
 func spawn_deck_pile() -> void:
 	var remaining = deck_manager.remaining_tiles.size()
@@ -172,11 +174,20 @@ func _refresh_top_discard() -> void:
 		top_discard_visual = null
 
 func get_discard_pos(player_id: int) -> Vector3:
-	var rack = racks[player_id]
-	# Istakanın sağına (rack basis X yönü) + yükseklik
-	var pos = rack.global_position + (rack.global_basis.x * 12.0) - (rack.global_basis.z * 4.0)
-	pos.y = 1.2
-	return pos
+	# Gammalı haç düzeni: Her oyuncu sağ eline atar (world-space sabit ofset)
+	# P0 (Güney, Z+): sağ = +X
+	# P1 (Doğu,  X+): sağ = +Z (oyuncuya doğru)
+	# P2 (Kuzey, Z-): sağ = -X
+	# P3 (Batı,  X-): sağ = -Z
+	var base = racks[player_id].global_position
+	base.y = 1.2
+	match player_id:
+		0: return base + Vector3(11, 0, 0)
+		1: return base + Vector3(0, 0, 11)
+		2: return base + Vector3(-11, 0, 0)
+		3: return base + Vector3(0, 0, -11)
+	return base
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  JOKER (OKEY) KURALI
@@ -211,6 +222,8 @@ func draw_from_deck() -> void:
 	var data = deck_manager.draw_tile()
 	if not data:
 		print("Deste bitti!")
+		emit_signal("game_message", "Deste bitti! Oyun bitti.", true)
+		_end_game()
 		return
 
 	var tile = _create_tile(data, $CenterDeckPos.global_position + Vector3(0, 2, 0), false)
@@ -272,9 +285,13 @@ func _do_discard(tile: TileObject) -> void:
 
 	tile.freeze = true
 	var d_pos = get_discard_pos(local_player_id)
-	var stack_offset = Vector3(0, 0.05 * player_discard_tiles[local_player_id].size(), 0)
-	tile.global_position = d_pos + stack_offset
-	tile.global_rotation_degrees = Vector3(-90, racks[local_player_id].global_rotation_degrees.y, 0)
+	var stack_offset = Vector3(0, 0.1 * player_discard_tiles[local_player_id].size(), 0)
+	var target_pos = d_pos + stack_offset
+	var target_rot = Vector3(-90, racks[local_player_id].global_rotation_degrees.y, 0)
+	
+	var tw = get_tree().create_tween().set_parallel(true)
+	tw.tween_property(tile, "global_position", target_pos, 0.25).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(tile, "global_rotation_degrees", target_rot, 0.25)
 
 	player_discard_tiles[local_player_id].append(tile)
 	emit_signal("tile_discarded", tile.data)
@@ -307,7 +324,10 @@ func _run_ai_turn() -> void:
 	if current_player == local_player_id: return
 
 	var data = deck_manager.draw_tile()
-	if not data: return
+	if not data:
+		emit_signal("game_message", "Deste bitti! Oyun bitti.", true)
+		_end_game()
+		return
 
 	if deck_pile_tiles.size() > 0:
 		var removed = deck_pile_tiles.pop_back()
@@ -323,9 +343,13 @@ func _run_ai_turn() -> void:
 	await get_tree().create_timer(0.4).timeout
 	
 	var d_pos = get_discard_pos(current_player)
-	var stack_offset = Vector3(0, 0.05 * player_discard_tiles[current_player].size(), 0)
-	t.global_position = d_pos + stack_offset
-	t.global_rotation_degrees = Vector3(-90, racks[current_player].global_rotation_degrees.y, 0)
+	var stack_offset = Vector3(0, 0.1 * player_discard_tiles[current_player].size(), 0)
+	var target_pos = d_pos + stack_offset
+	var target_rot = Vector3(-90, racks[current_player].global_rotation_degrees.y, 0)
+	
+	var tw = get_tree().create_tween().set_parallel(true)
+	tw.tween_property(t, "global_position", target_pos, 0.25).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(t, "global_rotation_degrees", target_rot, 0.25)
 	
 	player_discard_tiles[current_player].append(t)
 	deck_manager.discard_tile(data)
@@ -438,3 +462,20 @@ func _move_pair_to_table(player_id: int, tiles: Array, pair_index: int) -> void:
 func get_local_rack_score() -> Dictionary:
 	if racks.is_empty(): return {"series": 0, "pairs": 0}
 	return racks[local_player_id].calculate_current_score(okey_tile_data)
+
+func _end_game() -> void:
+	game_started = false
+	var result_scores = {}
+	for i in range(4):
+		var series_pts = 0
+		var pairs_pts = player_opened_pairs[i].size()
+		
+		# Masaya açılmış serilerden puanı toplayalım (çünkü ıstakadan çıktılar)
+		for s in player_opened_sets[i]:
+			var data_array: Array[OkeyTileData] = []
+			for t in s: data_array.append(t.data)
+			series_pts += RuleEngine.get_group_sum(data_array, okey_tile_data)
+			
+		result_scores[i] = { "series": series_pts, "pairs": pairs_pts }
+		
+	emit_signal("game_over", result_scores)

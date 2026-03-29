@@ -13,6 +13,7 @@ extends CanvasLayer
 var table: GameTable      = null
 var local_rack: RackObject = null
 var msg_timer: Timer      = null
+var remaining_label: Label = null
 
 func _ready() -> void:
 	msg_timer = Timer.new()
@@ -20,6 +21,15 @@ func _ready() -> void:
 	msg_timer.wait_time = 3.0
 	msg_timer.timeout.connect(_hide_message)
 	add_child(msg_timer)
+	
+	# Kalan taş sayısı için label ekleyelim
+	remaining_label = Label.new()
+	remaining_label.text = "Kalan Taş:"
+	remaining_label.add_theme_font_size_override("font_size", 22)
+	remaining_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	remaining_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	remaining_label.position = Vector2(-250, 20) # Sağ üstten biraz içeride
+	add_child(remaining_label)
 	
 	$MessagePanel.modulate.a = 0
 	
@@ -51,11 +61,17 @@ func _setup() -> void:
 		table.connect("tile_selected", _on_tile_selected)
 	if not table.is_connected("game_message", _show_message):
 		table.connect("game_message",  _show_message)
+	if not table.is_connected("game_over", _on_game_over):
+		table.connect("game_over", _on_game_over)
 	
 	print("UI: Setup complete. Current player: ", table.current_player)
 	_on_turn_changed(table.current_player)
 
 # ─── Skor ────────────────────────────────────────────────────────────────────
+func _process(_delta: float) -> void:
+	if table and table.deck_manager and remaining_label:
+		remaining_label.text = "Kalan Taş: %d" % table.deck_manager.remaining_tiles.size()
+
 func _refresh_score() -> void:
 	if not table or not score_label: return
 	var s = table.get_local_rack_score()
@@ -109,6 +125,56 @@ func _show_message(msg: String, error: bool) -> void:
 func _hide_message() -> void:
 	var tw = create_tween()
 	tw.tween_property($MessagePanel, "modulate:a", 0.0, 0.5)
+
+# ─── Oyun Sonu ──────────────────────────────────────────────────────────────
+func _on_game_over(scores: Dictionary) -> void:
+	var bg = Panel.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.modulate = Color(0, 0, 0, 0.7)
+	add_child(bg)
+	
+	var panel = PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	add_child(panel)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 15)
+	
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_bottom", 20)
+	margin.add_theme_constant_override("margin_left", 30)
+	margin.add_theme_constant_override("margin_right", 30)
+	margin.add_child(vbox)
+	panel.add_child(margin)
+	
+	var header = Label.new()
+	header.text = "OYUN BİTTİ"
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 32)
+	header.modulate = Color(1, 0.8, 0.2)
+	vbox.add_child(header)
+	
+	var sep = HSeparator.new()
+	vbox.add_child(sep)
+	
+	for i in range(4):
+		var lbl = Label.new()
+		var is_me = (table and i == table.local_player_id)
+		lbl.text = "Oyuncu %d %s: Seri Puanı: %d / Çift: %d" % [i+1, "(Sen)" if is_me else "", scores[i].series, scores[i].pairs]
+		if is_me: lbl.modulate = Color(0.4, 1.0, 0.4)
+		lbl.add_theme_font_size_override("font_size", 20)
+		vbox.add_child(lbl)
+		
+	var sep2 = HSeparator.new()
+	vbox.add_child(sep2)
+	
+	var btn_exit = Button.new()
+	btn_exit.text = "Ana Menüye Dön"
+	btn_exit.add_theme_font_size_override("font_size", 24)
+	btn_exit.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/MainMenu.tscn"))
+	vbox.add_child(btn_exit)
+
 
 # ─── Butonlar ────────────────────────────────────────────────────────────────
 func _on_btn_draw_pressed() -> void:
